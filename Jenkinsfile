@@ -2,11 +2,6 @@ pipeline {
 
     agent any
 
-    tools {
-        // Name must match the SonarScanner tool configured in Jenkins
-        sonarQube 'SonarScanner'
-    }
-
     options {
         timestamps()
     }
@@ -27,10 +22,8 @@ pipeline {
             steps {
                 sh '''
                     rm -rf ${BUILD_DIR}
-                    mkdir ${BUILD_DIR}
-
+                    mkdir -p ${BUILD_DIR}
                     cd ${BUILD_DIR}
-
                     cmake ..
                 '''
             }
@@ -40,47 +33,33 @@ pipeline {
             steps {
                 sh '''
                     cd ${BUILD_DIR}
-
                     make -j$(nproc)
                 '''
             }
         }
 
         stage('SonarQube Analysis') {
-
             steps {
-
                 withSonarQubeEnv('SonarQube') {
-
                     sh '''
                         sonar-scanner
                     '''
-
                 }
-
             }
-
         }
 
         stage('Quality Gate') {
-
             steps {
-
                 timeout(time: 5, unit: 'MINUTES') {
-
                     waitForQualityGate abortPipeline: true
-
                 }
-
             }
-
         }
 
         stage('Unit Tests') {
             steps {
                 sh '''
                     cd ${BUILD_DIR}
-
                     ctest -L unit --output-on-failure
                 '''
             }
@@ -90,61 +69,42 @@ pipeline {
             steps {
                 sh '''
                     cd ${BUILD_DIR}
-
                     ctest -L integration --output-on-failure
                 '''
             }
         }
 
         stage('Package') {
-
             when {
                 buildingTag()
             }
-
             steps {
-
                 sh '''
                     chmod +x scripts/package.sh
-
                     ./scripts/package.sh ${TAG_NAME}
                 '''
-
             }
-
         }
 
         stage('Archive') {
-
             when {
                 buildingTag()
             }
-
             steps {
-
-                archiveArtifacts artifacts: '*.tar.gz',
-                                 fingerprint: true
-
+                archiveArtifacts artifacts: '*.tar.gz', fingerprint: true
             }
-
         }
-
     }
 
     post {
-
         success {
-            echo "Pipeline Completed Successfully"
+            echo 'Pipeline completed successfully.'
         }
-
         failure {
-            echo "Pipeline Failed"
+            echo 'Pipeline failed.'
         }
-
         always {
             cleanWs()
         }
-
     }
-
 }
