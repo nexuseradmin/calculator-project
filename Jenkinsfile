@@ -40,10 +40,19 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        sonar-scanner
-                    '''
+                script {
+
+                    // Name MUST match the SonarQube Scanner name
+                    // configured in Manage Jenkins -> Tools
+                    def scannerHome = tool 'SonarScanner'
+
+                    withSonarQubeEnv('SonarQube') {
+
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner
+                        """
+
+                    }
                 }
             }
         }
@@ -97,12 +106,15 @@ pipeline {
     }
 
     post {
+
         success {
             echo 'Pipeline completed successfully.'
         }
+
         failure {
             echo 'Pipeline failed.'
         }
+
         always {
             cleanWs()
         }
