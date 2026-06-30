@@ -24,7 +24,10 @@ pipeline {
                     rm -rf ${BUILD_DIR}
                     mkdir -p ${BUILD_DIR}
                     cd ${BUILD_DIR}
-                    cmake ..
+
+                    cmake .. \
+                        -DCMAKE_BUILD_TYPE=Debug \
+                        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
                 '''
             }
         }
@@ -38,20 +41,31 @@ pipeline {
             }
         }
 
+        stage('Verify Build') {
+            steps {
+                sh '''
+                    echo "Current directory:"
+                    pwd
+
+                    echo "Build directory:"
+                    ls -la ${BUILD_DIR}
+
+                    echo "Checking compile_commands.json..."
+                    test -f ${BUILD_DIR}/compile_commands.json
+
+                    ls -l ${BUILD_DIR}/compile_commands.json
+                '''
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 script {
-
                     def scannerHome = tool 'SonarScanner'
 
                     withSonarQubeEnv('SonarQube') {
-
                         sh """
-                            ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=calculator \
-                            -Dsonar.projectName=Calculator \
-                            -Dsonar.sources=src \
-                            -Dsonar.tests=tests
+                            ${scannerHome}/bin/sonar-scanner
                         """
                     }
                 }
@@ -107,7 +121,6 @@ pipeline {
     }
 
     post {
-
         success {
             echo 'Pipeline completed successfully.'
         }
