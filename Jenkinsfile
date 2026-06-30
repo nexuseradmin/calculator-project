@@ -42,16 +42,17 @@ pipeline {
             steps {
                 script {
 
-                    // Name MUST match the SonarQube Scanner name
-                    // configured in Manage Jenkins -> Tools
                     def scannerHome = tool 'SonarScanner'
 
                     withSonarQubeEnv('SonarQube') {
 
                         sh """
-                            ${scannerHome}/bin/sonar-scanner
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=calculator \
+                            -Dsonar.projectName=Calculator \
+                            -Dsonar.sources=src \
+                            -Dsonar.tests=tests
                         """
-
                     }
                 }
             }
